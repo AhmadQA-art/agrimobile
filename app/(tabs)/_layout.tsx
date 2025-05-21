@@ -1,23 +1,8 @@
-import { Tabs, Redirect } from 'expo-router';
-import { View, StyleSheet, ActivityIndicator } from 'react-native';
-import { Chrome as Home, MessageCircle, Calendar, Search, User, LogOut } from 'lucide-react-native';
-import { useAuth } from '@/contexts/AuthContext';
+import { Tabs } from 'expo-router';
+import { View, StyleSheet } from 'react-native';
+import { Chrome as Home, MessageCircle, Calendar, Search, User } from 'lucide-react-native';
 
 export default function TabLayout() {
-  const { user, loading, signOut } = useAuth();
-
-  if (loading) {
-    return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" color="#5F8D4E" />
-      </View>
-    );
-  }
-
-  if (!user) {
-    return <Redirect href="/login" />;
-  }
-
   return (
     <Tabs
       screenOptions={{
@@ -71,22 +56,6 @@ export default function TabLayout() {
           tabBarIcon: ({ color, size }) => (
             <User size={size} color={color} />
           ),
-        }}
-      />
-      <Tabs.Screen
-        name="sign-out"
-        options={{
-          title: 'Sign Out',
-          tabBarIcon: ({ color, size }) => (
-            <LogOut size={size} color="#ff4d4f" />
-          ),
-          tabBarActiveTintColor: '#ff4d4f',
-        }}
-        listeners={{
-          tabPress: (e) => {
-            e.preventDefault();
-            signOut();
-          },
         }}
       />
     </Tabs>

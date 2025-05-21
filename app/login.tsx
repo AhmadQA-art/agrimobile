@@ -1,41 +1,40 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, Image, Alert } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, Image, Alert, ActivityIndicator } from 'react-native';
 import { Link, router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { Eye, EyeOff, ArrowLeft, User, Lock } from 'lucide-react-native';
-import { supabase } from '@/lib/supabase';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  
-  const [loading, setLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const { signIn } = useAuth();
   
   const handleLogin = async () => {
     if (!email || !password) {
-      Alert.alert('Error', 'Please fill in all fields');
+      Alert.alert('Error', 'Please enter both email and password');
       return;
     }
-    
-    try {
-      setLoading(true);
-      const { error } = await supabase.auth.signInWithPassword({
-        email: email.trim().toLowerCase(),
-        password: password,
-      });
 
-      if (error) throw error;
+    setIsLoading(true);
+    try {
+      const { error, data } = await signIn(email, password);
       
-      router.replace('/(tabs)');
+      if (error) {
+        Alert.alert('Error', error.message);
+      } else if (data?.user) {
+        router.replace('/(tabs)');
+      }
     } catch (error) {
       if (error instanceof Error) {
-        Alert.alert('Login Error', error.message);
+        Alert.alert('Error', error.message);
       } else {
-        Alert.alert('Login Error', 'An unexpected error occurred');
+        Alert.alert('Error', 'An unknown error occurred');
       }
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
   
@@ -109,13 +108,15 @@ export default function LoginScreen() {
         </TouchableOpacity>
         
         <TouchableOpacity 
-          style={[styles.loginButton, loading && styles.disabledButton]}
+          style={[styles.loginButton, isLoading && styles.disabledButton]}
           onPress={handleLogin}
-          disabled={loading}
+          disabled={isLoading}
         >
-          <Text style={styles.loginButtonText}>
-            {loading ? 'Signing in...' : 'Login'}
-          </Text>
+          {isLoading ? (
+            <ActivityIndicator color="#FFFFFF" />
+          ) : (
+            <Text style={styles.loginButtonText}>Login</Text>
+          )}
         </TouchableOpacity>
         
         <View style={styles.signupContainer}>
@@ -232,11 +233,11 @@ const styles = StyleSheet.create({
   },
   loginButtonText: {
     color: '#FFFFFF',
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '600',
-    textAlign: 'center',
   },
   disabledButton: {
+    backgroundColor: '#A3C99E',
     opacity: 0.7,
   },
   signupContainer: {

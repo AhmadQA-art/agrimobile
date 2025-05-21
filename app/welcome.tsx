@@ -1,24 +1,9 @@
-import { View, Text, StyleSheet, Image, TouchableOpacity, ActivityIndicator } from 'react-native';
-import { Link, Redirect } from 'expo-router';
+import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
+import { Link } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useAuth } from '@/contexts/AuthContext';
 
 export default function WelcomeScreen() {
-  const { user, loading } = useAuth();
-
-  if (loading) {
-    return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" color="#5F8D4E" />
-      </View>
-    );
-  }
-
-  if (user) {
-    return <Redirect href="/(tabs)" />;
-  }
-
   return (
     <View style={styles.container}>
       <StatusBar style="dark" />

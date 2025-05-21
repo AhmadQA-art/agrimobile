@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, Alert } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, Alert, ActivityIndicator } from 'react-native';
 import { Link, router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { Eye, EyeOff, ArrowLeft, User, Lock, Mail, Phone } from 'lucide-react-native';
-import { supabase } from '@/lib/supabase';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function SignupScreen() {
   const [name, setName] = useState('');
@@ -12,10 +12,11 @@ export default function SignupScreen() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [userType, setUserType] = useState('farmer'); // farmer or expert
-  
-  const [loading, setLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const { signUp } = useAuth();
   
   const handleSignup = async () => {
+    // Validate inputs
     if (!name || !email || !phone || !password) {
       Alert.alert('Error', 'Please fill in all fields');
       return;
@@ -25,50 +26,32 @@ export default function SignupScreen() {
       Alert.alert('Error', 'Password must be at least 6 characters');
       return;
     }
-
+    
+    setIsLoading(true);
     try {
-      setLoading(true);
-      
-      // Sign up the user
-      const { data: authData, error: signUpError } = await supabase.auth.signUp({
-        email: email.trim().toLowerCase(),
-        password: password,
-        options: {
-          data: {
-            full_name: name,
-            phone: phone,
-            user_type: userType,
-          },
-        },
+      const { error, data } = await signUp(email, password, {
+        name,
+        phone,
+        userType
       });
-
-      if (signUpError) throw signUpError;
       
-      // Check if we need to confirm the email
-      if (authData.user?.identities?.length === 0) {
-        Alert.alert('Error', 'This email is already registered');
-        return;
-      }
-      
-      // If email confirmation is required
-      if (authData.session) {
-        Alert.alert(
-          'Check your email',
-          'We\'ve sent you an email to confirm your account. Please check your inbox.'
-        );
-        router.replace('/login');
+      if (error) {
+        Alert.alert('Error', error.message);
       } else {
-        // If email confirmation is not required, go to home
-        router.replace('/(tabs)');
+        Alert.alert(
+          'Account Created', 
+          'Please check your email to confirm your account',
+          [{ text: 'OK', onPress: () => router.push('/login') }]
+        );
       }
     } catch (error) {
       if (error instanceof Error) {
-        Alert.alert('Signup Error', error.message);
+        Alert.alert('Error', error.message);
       } else {
-        Alert.alert('Signup Error', 'An unexpected error occurred');
+        Alert.alert('Error', 'An unknown error occurred');
       }
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
   
@@ -177,13 +160,15 @@ export default function SignupScreen() {
         </View>
         
         <TouchableOpacity 
-          style={[styles.signupButton, loading && styles.disabledButton]}
+          style={[styles.signupButton, isLoading && styles.disabledButton]}
           onPress={handleSignup}
-          disabled={loading}
+          disabled={isLoading}
         >
-          <Text style={styles.signupButtonText}>
-            {loading ? 'Creating Account...' : 'Create Account'}
-          </Text>
+          {isLoading ? (
+            <ActivityIndicator color="#FFFFFF" />
+          ) : (
+            <Text style={styles.signupButtonText}>Create Account</Text>
+          )}
         </TouchableOpacity>
         
         <View style={styles.termsContainer}>
@@ -304,10 +289,11 @@ const styles = StyleSheet.create({
   },
   signupButtonText: {
     color: '#FFFFFF',
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '600',
   },
   disabledButton: {
+    backgroundColor: '#A3C99E',
     opacity: 0.7,
   },
   termsContainer: {
