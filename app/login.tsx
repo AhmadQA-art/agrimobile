@@ -20,14 +20,20 @@ export default function LoginScreen() {
 
     setIsLoading(true);
     try {
-      const { error, data } = await signIn(email, password);
+      // Supabase v1.35.7 returns { user, session, error } directly
+      const { user, session, error } = await signIn(email, password);
       
       if (error) {
-        Alert.alert('Error', error.message);
-      } else if (data?.user) {
+        Alert.alert('Error', error.message || 'Authentication failed');
+      } else if (user) {
+        // Successfully logged in
+        console.log('Login successful:', user.email);
         router.replace('/(tabs)');
+      } else {
+        Alert.alert('Error', 'Login failed. Please try again.');
       }
     } catch (error) {
+      console.error('Login error:', error);
       if (error instanceof Error) {
         Alert.alert('Error', error.message);
       } else {

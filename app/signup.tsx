@@ -29,22 +29,30 @@ export default function SignupScreen() {
     
     setIsLoading(true);
     try {
-      const { error, data } = await signUp(email, password, {
-        name,
-        phone,
-        userType
+      // In Supabase v1.35.7, the signUp method returns { user, error } directly
+      const { user, error } = await signUp(email, password, {
+        data: { // Make sure to use the data field as expected by v1.35.7
+          name,
+          phone,
+          userType
+        }
       });
       
       if (error) {
-        Alert.alert('Error', error.message);
-      } else {
+        console.error('Signup error:', error);
+        Alert.alert('Error', error.message || 'Sign up failed');
+      } else if (user) {
+        console.log('Signup successful:', user.email);
         Alert.alert(
           'Account Created', 
           'Please check your email to confirm your account',
           [{ text: 'OK', onPress: () => router.push('/login') }]
         );
+      } else {
+        Alert.alert('Error', 'Sign up failed for unknown reason');
       }
     } catch (error) {
+      console.error('Signup exception:', error);
       if (error instanceof Error) {
         Alert.alert('Error', error.message);
       } else {
